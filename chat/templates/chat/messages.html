@@ -1,0 +1,62 @@
+{% extends 'chat/chats.html' %}
+{% load static %}
+
+{% block message %}
+{% for message in messages %}
+    {% if curr_user == message.sender_name %}
+        <div class="container darker" style="width:40%; margin-left:100vh;">
+            <img src="{% static 'images/user_image.jpg' %}" alt="Avatar" class="right" style="width:100%;">
+            <p>{{message.description}}</p>
+            <span class="time-right">{{message.sender_name}} {{message.time}}</span>
+        </div>
+    {% else %}
+        <div class="container text-white" style="background-color:#55a0f1; border:none; width: 40%;">
+            <img src="{% static 'images/user_image.jpg' %}" alt="Avatar" style="width:100%;">
+            <p>{{message.description}}</p>
+            <span class="time-left text-white-50">{{message.sender_name}} {{message.time}}</span>
+        </div>
+    {% endif %}
+{% endfor %}
+<script>
+function scrolltoend() {
+    $('#board').stop().animate({
+        scrollTop: $('#board')[0].scrollHeight
+    }, 800);
+}
+
+$(function () {
+    setInterval(receive, 1000)
+})
+
+const text = '<div class="container text-white" style="background-color:#55a0f1; border:none; width: 40%;">'
+            + '<img src="{% static 'images/user_image.jpg' %}" alt="Avatar" style="width:100%;">' +
+            '<p>{description}</p>' +
+            '<span class="time-left text-white-50">{sender_name} {time}</span>' +
+            '</div>'
+
+function receive(){
+    $.get('/api/messages/' + sender_id + '/' + receiver_id, function(data){
+        if(data.length !== 0){
+            for(var i = 0; i < data.length; i++){
+                // console.log(data);
+                var field = text.replace('{description}', data[i].description);
+                var mTime = data[i].time.slice(0, 5);
+                var hours = parseInt(mTime.split(':')[0]);
+                var minutes = mTime.split(':')[1];
+
+                var am_pm = (hours >= 12) ? "p.m." : "a.m.";
+                hours = (hours % 12) || 12; // Convert hours to 12-hour format
+
+                var time = hours + ":" + minutes + " " + am_pm;
+                field = field.replace('{time}', time);
+                field = field.replace('{sender_name}', data[i].sender_name);
+                $('#board').append(field);
+                scrolltoend();
+            }
+        }
+    })
+}
+
+</script>
+
+{% endblock %}
